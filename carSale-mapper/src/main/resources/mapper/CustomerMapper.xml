@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dao.CustomerDao">
+    <!-- Customer的resultMap,column是给数据库列起的别名,它对应property类的属性-->
+    <resultMap id="result_Customer_Map" type="com.bean.Customer">
+        <id column="customerId" property="customerId" />
+        <result column="customerSex" property="customerSex" />
+        <result column="customerName" property="customerName" />
+        <result column="companyId" property="companyId" />
+        <result column="customerPhone" property="customerPhone" />
+        <result column="customerType" property="customerType" />
+        <result column="customerCreateTime" property="customerCreateTime" />
+        <result column="customerBirthday" property="customerBirthday" />
+    </resultMap>
+
+	   <!-- Assist用于辅助工具类setRequires设置的条件,${req.require}表示列名,#{req.value}表示值它是防SQL注入的 -->
+    <sql id="Assist">
+        <where>
+            <foreach collection="require" item="req" separator=" ">
+                ${req.require} 
+                <if test="req.value != null"> #{req.value}</if> 
+                <if test="req.values != null">
+                    <foreach collection="req.values" item="val" separator=","> 
+                        #{val} 
+                    </foreach> 
+                </if> 
+                <if test="req.suffix != null"> ${req.suffix}</if> 
+            </foreach>
+        </where>
+    </sql>
+
+	   <!-- updateAssist用于更新数据的使用它拓展自Assist,用于辅助工具类setRequires设置的条件,${req.require}表示列名,#{req.value}表示值它是防SQL注入的 -->
+    <sql id="updateAssist">
+        <where>
+            <foreach collection="assist.require" item="req" separator=" ">
+                ${req.require} 
+                <if test="req.value != null"> #{req.value}</if> 
+                <if test="req.values != null">
+                    <foreach collection="req.values" item="val" separator=","> 
+                        #{val} 
+                    </foreach> 
+                </if> 
+                <if test="req.suffix != null"> ${req.suffix}</if> 
+            </foreach>
+        </where>
+    </sql>
+
+    <!-- 数据库中表名为:customer的列名,as前是数据库的列明,as后是列的别名用于映射成实体类中的属性,需要注意的是别名必须与resultMap中的column别名一致 -->
+    <sql id="customer_Column">
+        customer.customerId as customerId
+        ,customer.customerSex as customerSex
+        ,customer.customerName as customerName
+        ,customer.companyId as companyId
+        ,customer.customerPhone as customerPhone
+        ,customer.customerType as customerType
+        ,customer.customerCreateTime as customerCreateTime
+        ,customer.customerBirthday as customerBirthday
+    </sql>
+
+    <!--获得类名为:Customer对应的数据库表的数据总行数 -->
+    <select id="getCustomerRowCount" parameterType="com.common.Assist" resultType="java.lang.Long">
+        select count(customerId) from customer
+        <if test="require!=null"><include refid="Assist" /></if>
+    </select>
+    <!-- 获得类名为:Customer对应数据库中表的数据集合 -->
+    <select id="selectCustomer" parameterType="com.common.Assist"  resultMap="result_Customer_Map">
+        select  <if test="distinct !=null">${distinct}</if>
+        <choose>
+            <when test="resultColumn!=null">${resultColumn}</when>
+            <otherwise>
+        <include refid="customer_Column" /> 
+            </otherwise>
+        </choose>
+        from customer
+        <choose>
+            <when test="rowSize ==null">
+                <if test="require!=null">
+                    <include refid="Assist" />
+                </if>
+                <if test="order !=null">${order}</if>
+            </when>
+            <otherwise>
+                inner join
+                (
+                SELECT customerId as primary_key FROM customer
+                <if test="require!=null">
+                    <include refid="Assist" />
+                </if>
+                <if test="order !=null">${order}</if>
+                <choose>
+                    <when test="startRow !=null and rowSize !=null">LIMIT #{startRow},#{rowSize} </when>
+                    <when test="rowSize !=null">LIMIT #{rowSize}</when>
+                 </choose>
+                 ) as tmp
+                 on tmp.primary_key=customer.customerId
+            </otherwise>
+        </choose>
+    </select> 
+
+    <!-- 获得一个Customer对象,以参数Customer对象中不为空的属性作为条件进行查询-->
+    <select id="selectCustomerByObj" parameterType="com.bean.Customer" resultMap="result_Customer_Map">
+        select 
+            <include refid="customer_Column" /> 
+        from customer
+        <where>
+            <if test="email != null "> and customer.email = #{email}</if>
+            <if test="firstName != null "> and customer.first_name = #{firstName}</if>
+            <if test="createDate != null "> and customer.create_date = #{createDate}</if>
+            <if test="customerId != null "> and customer.customer_id = #{customerId}</if>
+            <if test="customerBirthday != null "> and customer.customerBirthday = #{customerBirthday}</if>
+            <if test="lastUpdate != null "> and customer.last_update = #{lastUpdate}</if>
+            <if test="customerCreateTime != null "> and customer.customerCreateTime = #{customerCreateTime}</if>
+            <if test="customerType != null "> and customer.customerType = #{customerType}</if>
+            <if test="customerPhone != null "> and customer.customerPhone = #{customerPhone}</if>
+            <if test="companyId != null "> and customer.companyId = #{companyId}</if>
+            <if test="customerName != null "> and customer.customerName = #{customerName}</if>
+            <if test="active != null "> and customer.active = #{active}</if>
+            <if test="lastName != null "> and customer.last_name = #{lastName}</if>
+            <if test="addressId != null "> and customer.address_id = #{addressId}</if>
+            <if test="customerSex != null "> and customer.customerSex = #{customerSex}</if>
+            <if test="storeId != null "> and customer.store_id = #{storeId}</if>
+            <if test="customerId != null "> and customer.customerId = #{customerId}</if>
+        </where>
+    </select> 
+
+    <!-- 通过Customer的id获得对应数据库中表的数据对象-->
+    <select id="selectCustomerById" parameterType="java.lang.Integer" resultMap="result_Customer_Map">
+        select 
+            <include refid="customer_Column" /> 
+        from customer
+        where customer.customerId = #{id}
+    </select> 
+
+    <!-- 将Customer插入到对应数据库的表中,包括属性值为null的数据-->
+
+    <insert id="insertCustomer" parameterType="com.bean.Customer">
+        insert into customer(customerId,store_id,customerSex,address_id,last_name,active,customerName,companyId,customerPhone,customerType,customerCreateTime,last_update,customerBirthday,customer_id,create_date,first_name,email) 
+        values(#{customerId},#{storeId},#{customerSex},#{addressId},#{lastName},#{active},#{customerName},#{companyId},#{customerPhone},#{customerType},#{customerCreateTime},#{lastUpdate},#{customerBirthday},#{customerId},#{createDate},#{firstName},#{email})
+    </insert>
+
+    <!-- 将Customer中属性值不为null的数据,插入到对应数据库的表中-->
+    <insert id="insertNonEmptyCustomer" parameterType="com.bean.Customer">
+        insert into customer
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="customerId != null">customerId,</if>
+            <if test="storeId != null">store_id,</if>
+            <if test="customerSex != null">customerSex,</if>
+            <if test="addressId != null">address_id,</if>
+            <if test="lastName != null">last_name,</if>
+            <if test="active != null">active,</if>
+            <if test="customerName != null">customerName,</if>
+            <if test="companyId != null">companyId,</if>
+            <if test="customerPhone != null">customerPhone,</if>
+            <if test="customerType != null">customerType,</if>
+            <if test="customerCreateTime != null">customerCreateTime,</if>
+            <if test="lastUpdate != null">last_update,</if>
+            <if test="customerBirthday != null">customerBirthday,</if>
+            <if test="customerId != null">customer_id,</if>
+            <if test="createDate != null">create_date,</if>
+            <if test="firstName != null">first_name,</if>
+            <if test="email != null">email,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="customerId != null"> #{customerId},</if>
+            <if test="storeId != null"> #{storeId},</if>
+            <if test="customerSex != null"> #{customerSex},</if>
+            <if test="addressId != null"> #{addressId},</if>
+            <if test="lastName != null"> #{lastName},</if>
+            <if test="active != null"> #{active},</if>
+            <if test="customerName != null"> #{customerName},</if>
+            <if test="companyId != null"> #{companyId},</if>
+            <if test="customerPhone != null"> #{customerPhone},</if>
+            <if test="customerType != null"> #{customerType},</if>
+            <if test="customerCreateTime != null"> #{customerCreateTime},</if>
+            <if test="lastUpdate != null"> #{lastUpdate},</if>
+            <if test="customerBirthday != null"> #{customerBirthday},</if>
+            <if test="customerId != null"> #{customerId},</if>
+            <if test="createDate != null"> #{createDate},</if>
+            <if test="firstName != null"> #{firstName},</if>
+            <if test="email != null"> #{email},</if>
+        </trim>
+    </insert>
+
+    <!-- 将Customer批量插入到对应数据库的表中-->
+    <insert id="insertCustomerByBatch" parameterType="ArrayList">
+        insert into customer(customerId,store_id,customerSex,address_id,last_name,active,customerName,companyId,customerPhone,customerType,customerCreateTime,last_update,customerBirthday,customer_id,create_date,first_name,email) values
+        <foreach collection="list" item="item" index="index" separator="," >
+            (#{item.customerId},#{item.storeId},#{item.customerSex},#{item.addressId},#{item.lastName},#{item.active},#{item.customerName},#{item.companyId},#{item.customerPhone},#{item.customerType},#{item.customerCreateTime},#{item.lastUpdate},#{item.customerBirthday},#{item.customerId},#{item.createDate},#{item.firstName},#{item.email})
+        </foreach>
+    </insert>
+
+    <!-- 通过Customer的id将数据库表中对应的数据删除-->
+    <delete id="deleteCustomerById" parameterType="java.lang.Integer">
+        delete from customer
+        where customerId = #{id}
+    </delete>
+
+    <!-- 通过辅助工具Assist中的条件将Customer对应的数据库表的数据删除-->
+    <delete id="deleteCustomer" parameterType="com.common.Assist">
+        delete from customer
+        <if test="require!=null"><include refid="Assist" /></if>
+    </delete>
+
+    <!-- 通过Customer的id将Customer的数据更新到数据库中对应的表,包括值null的数据-->
+    <update id="updateCustomerById" parameterType="com.bean.Customer">
+        update customer set
+            store_id=#{storeId}
+            ,customerSex=#{customerSex}
+            ,address_id=#{addressId}
+            ,last_name=#{lastName}
+            ,active=#{active}
+            ,customerName=#{customerName}
+            ,companyId=#{companyId}
+            ,customerPhone=#{customerPhone}
+            ,customerType=#{customerType}
+            ,customerCreateTime=#{customerCreateTime}
+            ,last_update=#{lastUpdate}
+            ,customerBirthday=#{customerBirthday}
+            ,customer_id=#{customerId}
+            ,create_date=#{createDate}
+            ,first_name=#{firstName}
+            ,email=#{email}
+        where customerId=#{customerId}
+    </update>
+
+    <!-- 通过Customer的id将Customer中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptyCustomerById" parameterType="com.bean.Customer">
+        update customer
+        <set>
+            <if test="storeId != null">
+                store_id=#{storeId},
+            </if>
+            <if test="customerSex != null">
+                customerSex=#{customerSex},
+            </if>
+            <if test="addressId != null">
+                address_id=#{addressId},
+            </if>
+            <if test="lastName != null">
+                last_name=#{lastName},
+            </if>
+            <if test="active != null">
+                active=#{active},
+            </if>
+            <if test="customerName != null">
+                customerName=#{customerName},
+            </if>
+            <if test="companyId != null">
+                companyId=#{companyId},
+            </if>
+            <if test="customerPhone != null">
+                customerPhone=#{customerPhone},
+            </if>
+            <if test="customerType != null">
+                customerType=#{customerType},
+            </if>
+            <if test="customerCreateTime != null">
+                customerCreateTime=#{customerCreateTime},
+            </if>
+            <if test="lastUpdate != null">
+                last_update=#{lastUpdate},
+            </if>
+            <if test="customerBirthday != null">
+                customerBirthday=#{customerBirthday},
+            </if>
+            <if test="customerId != null">
+                customer_id=#{customerId},
+            </if>
+            <if test="createDate != null">
+                create_date=#{createDate},
+            </if>
+            <if test="firstName != null">
+                first_name=#{firstName},
+            </if>
+            <if test="email != null">
+                email=#{email},
+            </if>
+        </set>
+        where customerId=#{customerId}
+    </update>
+
+    <!-- 通过辅助工具Assist中的条件将Customer中的数据更新到数据库对应的表中,包括值为null的数据-->
+    <update id="updateCustomer" parameterType="map">
+        update customer
+        <set>
+                customerId=#{enti.customerId},
+                store_id=#{enti.storeId},
+                customerSex=#{enti.customerSex},
+                address_id=#{enti.addressId},
+                last_name=#{enti.lastName},
+                active=#{enti.active},
+                customerName=#{enti.customerName},
+                companyId=#{enti.companyId},
+                customerPhone=#{enti.customerPhone},
+                customerType=#{enti.customerType},
+                customerCreateTime=#{enti.customerCreateTime},
+                last_update=#{enti.lastUpdate},
+                customerBirthday=#{enti.customerBirthday},
+                customer_id=#{enti.customerId},
+                create_date=#{enti.createDate},
+                first_name=#{enti.firstName},
+                email=#{enti.email},
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+    <!-- 通过辅助工具Assist中的条件将Customer中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptyCustomer" parameterType="map">
+        update customer
+        <set>
+            <if test="enti.customerId != null">
+                customerId=#{enti.customerId},
+            </if>
+            <if test="enti.storeId != null">
+                store_id=#{enti.storeId},
+            </if>
+            <if test="enti.customerSex != null">
+                customerSex=#{enti.customerSex},
+            </if>
+            <if test="enti.addressId != null">
+                address_id=#{enti.addressId},
+            </if>
+            <if test="enti.lastName != null">
+                last_name=#{enti.lastName},
+            </if>
+            <if test="enti.active != null">
+                active=#{enti.active},
+            </if>
+            <if test="enti.customerName != null">
+                customerName=#{enti.customerName},
+            </if>
+            <if test="enti.companyId != null">
+                companyId=#{enti.companyId},
+            </if>
+            <if test="enti.customerPhone != null">
+                customerPhone=#{enti.customerPhone},
+            </if>
+            <if test="enti.customerType != null">
+                customerType=#{enti.customerType},
+            </if>
+            <if test="enti.customerCreateTime != null">
+                customerCreateTime=#{enti.customerCreateTime},
+            </if>
+            <if test="enti.lastUpdate != null">
+                last_update=#{enti.lastUpdate},
+            </if>
+            <if test="enti.customerBirthday != null">
+                customerBirthday=#{enti.customerBirthday},
+            </if>
+            <if test="enti.customerId != null">
+                customer_id=#{enti.customerId},
+            </if>
+            <if test="enti.createDate != null">
+                create_date=#{enti.createDate},
+            </if>
+            <if test="enti.firstName != null">
+                first_name=#{enti.firstName},
+            </if>
+            <if test="enti.email != null">
+                email=#{enti.email},
+            </if>
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+</mapper>

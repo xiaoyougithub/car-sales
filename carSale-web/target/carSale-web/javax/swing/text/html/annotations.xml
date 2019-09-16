@@ -1,0 +1,5 @@
+<root>
+    <item name='javax.swing.text.html.FormSubmitEvent'>
+        <annotation name='java.lang.Deprecated'/>
+    </item>
+</root>
